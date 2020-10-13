@@ -3,10 +3,8 @@ package com.github.wrapper.bitcoin.facade.impl;
 import com.github.wrapper.bitcoin.controllers.IBlockController;
 import com.github.wrapper.bitcoin.controllers.impl.BlockController;
 import com.github.wrapper.bitcoin.facade.IFacadeBitcoin;
-import com.github.wrapper.bitcoin.model.ChainAddress;
-import com.github.wrapper.bitcoin.model.KeysBag;
-import com.github.wrapper.bitcoin.model.NewBlock;
-import com.github.wrapper.bitcoin.model.TransactionData;
+import com.github.wrapper.bitcoin.model.*;
+import com.github.wrapper.bitcoin.payload.BlockChainInfo;
 import com.github.wrapper.bitcoin.utils.Network;
 import com.github.wrapper.bitcoin.utils.WrapWallet;
 import com.google.common.collect.ImmutableList;
@@ -41,25 +39,38 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
 
     private static final Logger log = LoggerFactory.getLogger(FacadeBitcoin.class);
 
+    private static final int ZERO = 0;
+
+    private static final int ONE = 1;
+
+    private static final int TEN = 10;
+
+    private static final int THIRTY = 30;
+
+    private static final int ONE_HUNDRED_TWENTY_EIGHT = 128;
+
     private final NetworkParameters params;
 
     private final String derivation;
 
     private final WrapWallet wallet;
 
+    private final int period;
+
     private AtomicLong count;
 
-    public FacadeBitcoin(Network network, String derivation, String path, String walletName) {
+    public FacadeBitcoin(Network network, String derivation, String path, String walletName, int period) {
         this.params = network.get();
         this.derivation = derivation;
         this.wallet = new WrapWallet(network.get(),
                 new File(path), walletName);
+        this.period = period;
     }
 
     @Override
     public KeysBag generateKeys() {
         SecureRandom sr = new SecureRandom();
-        DeterministicSeed seed = new DeterministicSeed(sr, 128, "");
+        DeterministicSeed seed = new DeterministicSeed(sr, ONE_HUNDRED_TWENTY_EIGHT, "");
         String mnemonic = String.join(" ",
                 Objects.requireNonNull(seed.getMnemonicCode()));
         long timeCreating = System.currentTimeMillis();
@@ -85,25 +96,36 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
         DeterministicKey keys = new DeterministicKey(pathList, chainCode,
                 publicOnly.getPubKeyPoint(), (BigInteger) null, (DeterministicKey) null);
         DeterministicKey parentKey = HDKeyDerivation
-                .deriveChildKey(keys, new ChildNumber(BigInteger.ZERO.intValue(), Boolean.FALSE));
+                .deriveChildKey(keys, new ChildNumber(ZERO, Boolean.FALSE));
         return IntStream.rangeClosed(start, amount + start)
                 .mapToObj(i -> this.createAddress(i, parentKey))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public String send(String transaction) {
+    public ResponseTrx send(String transaction) {
         byte[] array = Utils.HEX.decode(transaction);
         Transaction t = new Transaction(this.params, array);
         SendRequest request = SendRequest.forTx(t);
         try {
             Wallet.SendResult result = this.wallet.wallet().sendCoins(request);
-            Transaction resultTx = result.broadcastComplete.get(30, TimeUnit.SECONDS);
-            return resultTx.getTxId().toString();
+            Transaction response = result.broadcastComplete.get(THIRTY, TimeUnit.SECONDS);
+            String hash = response.getTxId().toString();
+            return new ResponseTrx(hash, response.getInputs().stream()
+                    .map(SpentInput::instance)
+                    .collect(Collectors.toList()),
+                    Boolean.FALSE, null
+            );
         } catch (InsufficientMoneyException | InterruptedException | ExecutionException | TimeoutException e) {
             log.error("Enter: {}", e.getMessage());
+            return new ResponseTrx(t.getTxId().toString(),
+                    t.getInputs().stream()
+                            .map(SpentInput::instance)
+                            .collect(Collectors.toList()),
+                    Boolean.TRUE,
+                    new ResponseTrx.Error(e.getMessage())
+            );
         }
-        return null;
     }
 
     @Override
@@ -111,7 +133,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
         BriefLogFormatter.init();
         this.wallet.wrapStartAsync();
         this.wallet.wrapAwaitRun();
-        this.wallet.addPeer(BigInteger.ONE.intValue());
+        this.wallet.addPeer(ONE);
         this.wallet.peerGroup();
     }
 
@@ -139,12 +161,17 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
             Executors.newSingleThreadScheduledExecutor()
                     .scheduleAtFixedRate(
                             () -> fetchBlock(controller, blocks),
-                            0,
-                            1,
+                            ZERO,
+                            this.period,
                             TimeUnit.MINUTES
                     );
         }
         return null;
+    }
+
+    @Override
+    public BlockChainInfo fetchInfo(String url) {
+        return new BlockController(url).findBlockChainInfo();
     }
 
     private void fetchBlock(IBlockController controller, Consumer<NewBlock> blocks) {
@@ -169,7 +196,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     private Block fetchBlock(Peer peer, String hash) {
         try {
             return peer.getBlock(Sha256Hash.wrap(hash))
-                    .get(10, TimeUnit.SECONDS);
+                    .get(TEN, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             log.warn("Enter: {}", e.getMessage());
         }

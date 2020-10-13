@@ -2,6 +2,7 @@ package com.github.wrapper.bitcoin.controllers.impl;
 
 import com.github.wrapper.bitcoin.config.AppConfig;
 import com.github.wrapper.bitcoin.controllers.IBlockController;
+import com.github.wrapper.bitcoin.payload.BlockChainInfo;
 import com.github.wrapper.bitcoin.payload.BlockHashSoChain;
 import com.github.wrapper.bitcoin.payload.BlockHeightAdapter;
 import com.github.wrapper.bitcoin.services.IBlockSoChainService;
@@ -21,6 +22,21 @@ public final class BlockController implements IBlockController {
 
     public BlockController(String url) {
         this.url = url;
+    }
+
+    @Override
+    public BlockChainInfo findBlockChainInfo() {
+        IBlockSoChainService service = AppConfig.getInstance().blockSoChainService(this.url);
+        Call<BlockChainInfo> call = service.findBlockChainInfo();
+        try {
+            Response<BlockChainInfo> response = call.execute();
+            if (response.isSuccessful()) {
+                return response.body();
+            }
+        } catch (IOException e) {
+            log.warn("Enter: {}", e.getMessage());
+        }
+        return null;
     }
 
     @Override

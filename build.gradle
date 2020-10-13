@@ -2,15 +2,12 @@ plugins {
     id 'java'
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
-
 repositories {
     mavenCentral()
 }
 
 group = 'com.github.wrapper.bitcoin'
-version = '0.0.1'
+version = '0.0.2'
 sourceCompatibility = '11'
 
 dependencies {

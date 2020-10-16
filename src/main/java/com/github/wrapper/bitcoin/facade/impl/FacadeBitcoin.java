@@ -51,6 +51,8 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
 
     private final NetworkParameters params;
 
+    private final Network network;
+
     private final String derivation;
 
     private final WrapWallet wallet;
@@ -60,6 +62,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     private AtomicLong count;
 
     public FacadeBitcoin(Network network, String derivation, String path, String walletName, int period) {
+        this.network = network;
         this.params = network.get();
         this.derivation = derivation;
         this.wallet = new WrapWallet(network.get(),
@@ -175,8 +178,8 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     }
 
     @Override
-    public NetworkParameters getParams() {
-        return this.params;
+    public Network getNetwork() {
+        return this.network;
     }
 
     @Override

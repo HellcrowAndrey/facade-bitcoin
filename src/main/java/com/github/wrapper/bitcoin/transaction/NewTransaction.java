@@ -154,7 +154,7 @@ public final class NewTransaction {
 
         private void calculation(BigDecimal fee) {
             BigDecimal overFlow = BigDecimal.ZERO;
-            this.totalAmount = WrapUtils.amountRight(this.amount).add(fee);
+            this.totalAmount = this.amount.add(fee);
             this.unspentOutputs = Lists.newArrayList();
             for (UnspentOutput o : this.outputs) {
                 overFlow = overFlow.add(o.getAmount());

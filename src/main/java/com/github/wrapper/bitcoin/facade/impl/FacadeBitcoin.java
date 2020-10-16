@@ -174,6 +174,16 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
         return new BlockController(url).findBlockChainInfo();
     }
 
+    @Override
+    public NetworkParameters getParams() {
+        return this.params;
+    }
+
+    @Override
+    public String getDerivation() {
+        return this.derivation;
+    }
+
     private void fetchBlock(IBlockController controller, Consumer<NewBlock> blocks) {
         try {
             controller.findBlockHash(this.count.incrementAndGet())

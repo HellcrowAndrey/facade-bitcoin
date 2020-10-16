@@ -5,6 +5,7 @@ import com.github.wrapper.bitcoin.model.KeysBag;
 import com.github.wrapper.bitcoin.model.NewBlock;
 import com.github.wrapper.bitcoin.model.ResponseTrx;
 import com.github.wrapper.bitcoin.payload.BlockChainInfo;
+import org.bitcoinj.core.NetworkParameters;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -24,5 +25,9 @@ public interface IFacadeBitcoin {
     NewBlock fetchBlock(Long height, String url, Consumer<NewBlock> blocks);
 
     BlockChainInfo fetchInfo(String url);
+
+    NetworkParameters getParams();
+
+    String getDerivation();
 
 }

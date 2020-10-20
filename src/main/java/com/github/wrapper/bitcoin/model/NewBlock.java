@@ -1,7 +1,11 @@
 package com.github.wrapper.bitcoin.model;
 
+import com.github.wrapper.bitcoin.function.Incoming;
+import com.github.wrapper.bitcoin.function.Outgoing;
+
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public final class NewBlock {
 
@@ -27,6 +31,31 @@ public final class NewBlock {
 
     public List<TransactionData> getTransactions() {
         return transactions;
+    }
+
+    public void transactions(Incoming incoming, Outgoing outgoing, Supplier<List<String>> addressFunc) {
+        List<String> addresses = addressFunc.get();
+        addresses.forEach(address -> this.transactions
+                .forEach(transaction -> searchTransactions(incoming, outgoing, transaction, address, height, hash)));
+    }
+
+    private void searchTransactions(Incoming incoming, Outgoing outgoing, TransactionData transaction, String address, long height, String blockHash) {
+        incoming(incoming, transaction, address, height, blockHash);
+        outgoing(outgoing, transaction, address, height, blockHash);
+    }
+
+    private void incoming(Incoming incoming, TransactionData data, String address, long height, String blockHash) {
+        data.getOutputs().stream()
+                .filter(output -> address.equals(output.getAddress()))
+                .findAny()
+                .ifPresent(output -> incoming.incoming(data, output, address, height, blockHash));
+    }
+
+    private void outgoing(Outgoing outgoing, TransactionData data, String address, long height, String blockHash) {
+        data.getInputs().stream()
+                .filter(input -> address.equals(input.getAddress()))
+                .findAny()
+                .ifPresent(input -> outgoing.outgoing(data, height, blockHash));
     }
 
     @Override

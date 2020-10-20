@@ -1,2 +1,2 @@
-# wrapper-ethrereum
-This is wrapper of ethereum
+# wrapper-bitcoin
+This is wrapper of bitcoin

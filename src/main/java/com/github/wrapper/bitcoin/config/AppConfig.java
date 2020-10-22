@@ -1,6 +1,6 @@
 package com.github.wrapper.bitcoin.config;
 
-import com.github.wrapper.bitcoin.services.IBlockSoChainService;
+import com.github.wrapper.bitcoin.repository.BlockSoChainRepository;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -32,9 +32,9 @@ public final class AppConfig {
         return retrofit;
     }
 
-    public IBlockSoChainService blockSoChainService(String url) {
+    public BlockSoChainRepository blockSoChainService(String url) {
         Retrofit retrofit = getRetrofit(url);
-        return retrofit.create(IBlockSoChainService.class);
+        return retrofit.create(BlockSoChainRepository.class);
     }
 
 }

@@ -1,7 +1,7 @@
 package com.github.wrapper.bitcoin.facade.impl;
 
-import com.github.wrapper.bitcoin.controllers.IBlockController;
-import com.github.wrapper.bitcoin.controllers.impl.BlockController;
+import com.github.wrapper.bitcoin.services.IBlockSoChainService;
+import com.github.wrapper.bitcoin.services.impl.BlockSoChainService;
 import com.github.wrapper.bitcoin.facade.IFacadeBitcoin;
 import com.github.wrapper.bitcoin.model.*;
 import com.github.wrapper.bitcoin.payload.BlockChainInfo;
@@ -160,7 +160,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     public NewBlock fetchBlock(Long height, String url, Consumer<NewBlock> blocks) {
         if (Objects.nonNull(height)) {
             this.count = new AtomicLong(height);
-            IBlockController controller = new BlockController(url);
+            IBlockSoChainService controller = new BlockSoChainService(url);
             Executors.newSingleThreadScheduledExecutor()
                     .scheduleAtFixedRate(
                             () -> fetchBlock(controller, blocks),
@@ -174,7 +174,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
 
     @Override
     public BlockChainInfo fetchInfo(String url) {
-        return new BlockController(url).findBlockChainInfo();
+        return new BlockSoChainService(url).findBlockChainInfo();
     }
 
     @Override
@@ -187,7 +187,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
         return this.derivation;
     }
 
-    private void fetchBlock(IBlockController controller, Consumer<NewBlock> blocks) {
+    private void fetchBlock(IBlockSoChainService controller, Consumer<NewBlock> blocks) {
         try {
             controller.findBlockHash(this.count.incrementAndGet())
                     .ifPresentOrElse(response -> {

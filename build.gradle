@@ -6,7 +6,7 @@ repositories {
     mavenCentral()
 }
 
-group = 'com.github.wrapper.bitcoin'
+group = 'com.github.facade.bitcoin'
 version = '0.0.8'
 sourceCompatibility = '11'
 

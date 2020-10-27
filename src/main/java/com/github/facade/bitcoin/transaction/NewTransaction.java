@@ -130,11 +130,13 @@ public final class NewTransaction {
             return this;
         }
 
+        @Deprecated
         public Builder calcUnspentOutput() {
             calculation(DEFAULT_FEE);
             return this;
         }
 
+        @Deprecated
         public Builder transaction() {
             notSignTrx();
             BigDecimal fee = calculateFee();

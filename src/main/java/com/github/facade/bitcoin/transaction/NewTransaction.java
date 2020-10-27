@@ -147,6 +147,33 @@ public final class NewTransaction {
             return this;
         }
 
+        public Builder transaction(Claim claim) {
+            if (claim.isFull()) {
+                BigDecimal value = this.amount.subtract(DEFAULT_FEE);
+                calculation(DEFAULT_FEE, value);
+                notSignTrx();
+                BigDecimal fee = calculateFee();
+                value = this.amount.subtract(fee);
+                calculation(fee, value);
+                signTrx();
+                this.hash = this.transaction.getTxId().toString();
+                byte[] bytes = this.transaction.unsafeBitcoinSerialize();
+                this.fee = fee;
+                this.trxHex = hex(bytes);
+            } else {
+                calculation(DEFAULT_FEE);
+                notSignTrx();
+                BigDecimal fee = calculateFee();
+                calculation(fee);
+                signTrx();
+                this.hash = this.transaction.getTxId().toString();
+                byte[] bytes = this.transaction.unsafeBitcoinSerialize();
+                this.fee = fee;
+                this.trxHex = hex(bytes);
+            }
+            return this;
+        }
+
         public NewTransaction build() {
             return new NewTransaction(this);
         }
@@ -154,6 +181,23 @@ public final class NewTransaction {
         private void calculation(BigDecimal fee) {
             BigDecimal overFlow = BigDecimal.ZERO;
             this.totalAmount = this.amount.add(fee);
+            this.unspentOutputs = Lists.newArrayList();
+            for (UnspentOutput o : this.outputs) {
+                overFlow = overFlow.add(o.getAmount());
+                this.unspentOutputs.add(o);
+                if (overFlow.doubleValue() >= this.totalAmount.doubleValue()) {
+                    break;
+                }
+            }
+            if (overFlow.doubleValue() < this.totalAmount.doubleValue()) {
+                throw new NotEnoughMoney("Balance is not enough.");
+            }
+            this.change = overFlow.subtract(this.totalAmount);
+        }
+
+        private void calculation(BigDecimal fee, BigDecimal amount) {
+            BigDecimal overFlow = BigDecimal.ZERO;
+            this.totalAmount = amount.add(fee);
             this.unspentOutputs = Lists.newArrayList();
             for (UnspentOutput o : this.outputs) {
                 overFlow = overFlow.add(o.getAmount());

@@ -1,6 +1,7 @@
 package com.github.facade.bitcoin;
 
 import com.github.facade.bitcoin.models.*;
+import com.github.facade.bitcoin.payloads.BlockHeightAdapter;
 import com.github.facade.bitcoin.services.IBlockSoChainService;
 import com.github.facade.bitcoin.services.impl.BlockSoChainService;
 import com.github.facade.bitcoin.payloads.BlockChainInfo;
@@ -26,9 +27,11 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -156,7 +159,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     }
 
     @Override
-    public NewBlock fetchBlock(Long height, String url, Consumer<NewBlock> blocks) {
+    public void addBlockListener(Long height, String url, Consumer<NewBlock> blocks) {
         if (Objects.nonNull(height)) {
             this.count = new AtomicLong(height);
             IBlockSoChainService controller = new BlockSoChainService(url);
@@ -168,7 +171,23 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
                             TimeUnit.MINUTES
                     );
         }
-        return null;
+    }
+
+    @Override
+    public void
+    addBlockListener(Long height,
+                     Function<Long, Optional<BlockHeightAdapter>> service,
+                     Consumer<NewBlock> blocks) {
+        if (Objects.nonNull(height)) {
+            this.count = new AtomicLong(height);
+            Executors.newSingleThreadScheduledExecutor()
+                    .scheduleAtFixedRate(
+                            () -> fetchBlock(service, blocks),
+                            ZERO,
+                            this.period,
+                            TimeUnit.MINUTES
+                    );
+        }
     }
 
     @Override
@@ -189,6 +208,18 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     private void fetchBlock(IBlockSoChainService controller, Consumer<NewBlock> blocks) {
         try {
             controller.findBlockHash(this.count.incrementAndGet())
+                    .ifPresentOrElse(response -> {
+                        NewBlock block = fetchBlock(response.getBlockHash(), response.getBlockNumber());
+                        CompletableFuture.runAsync(() -> blocks.accept(block));
+                    }, () -> this.count.decrementAndGet());
+        } catch (Throwable e) {
+            log.error("Enter: {}", e.getMessage());
+        }
+    }
+
+    private void fetchBlock(Function<Long, Optional<BlockHeightAdapter>> repository, Consumer<NewBlock> blocks) {
+        try {
+            repository.apply(this.count.incrementAndGet())
                     .ifPresentOrElse(response -> {
                         NewBlock block = fetchBlock(response.getBlockHash(), response.getBlockNumber());
                         CompletableFuture.runAsync(() -> blocks.accept(block));

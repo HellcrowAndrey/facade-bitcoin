@@ -5,10 +5,13 @@ import com.github.facade.bitcoin.models.KeysBag;
 import com.github.facade.bitcoin.models.NewBlock;
 import com.github.facade.bitcoin.models.ResponseTrx;
 import com.github.facade.bitcoin.payloads.BlockChainInfo;
+import com.github.facade.bitcoin.payloads.BlockHeightAdapter;
 import com.github.facade.bitcoin.utils.Network;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface IFacadeBitcoin {
 
@@ -22,7 +25,9 @@ public interface IFacadeBitcoin {
 
     NewBlock fetchBlock(String hash, long height);
 
-    NewBlock fetchBlock(Long height, String url, Consumer<NewBlock> blocks);
+    void addBlockListener(Long height, String url, Consumer<NewBlock> blocks);
+
+    void addBlockListener(Long height, Function<Long, Optional<BlockHeightAdapter>> service, Consumer<NewBlock> blocks);
 
     BlockChainInfo fetchInfo(String url);
 

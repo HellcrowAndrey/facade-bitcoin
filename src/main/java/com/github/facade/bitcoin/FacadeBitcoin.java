@@ -162,7 +162,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
     public void addBlockListener(Long height, String url, Consumer<NewBlock> blocks) {
         if (Objects.nonNull(height)) {
             this.count = new AtomicLong(height);
-            IBlockSoChainService controller = new BlockSoChainService(url);
+            IBlockSoChainService controller = new BlockSoChainService(this.network.getApi(), url);
             Executors.newSingleThreadScheduledExecutor()
                     .scheduleAtFixedRate(
                             () -> fetchBlock(controller, blocks),
@@ -192,7 +192,7 @@ public final class FacadeBitcoin implements IFacadeBitcoin {
 
     @Override
     public BlockChainInfo fetchInfo(String url) {
-        return new BlockSoChainService(url).findBlockChainInfo();
+        return new BlockSoChainService(this.network.getApi(), url).findBlockChainInfo();
     }
 
     @Override

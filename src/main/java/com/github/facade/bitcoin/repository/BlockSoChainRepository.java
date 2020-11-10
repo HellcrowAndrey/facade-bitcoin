@@ -8,10 +8,11 @@ import retrofit2.http.Path;
 
 public interface BlockSoChainRepository {
 
-    @GET(value = "/api/v2/get_info/BTC")
-    Call<BlockChainInfo> findBlockChainInfo();
+    @GET(value = "/api/v2/get_info/{network}")
+    Call<BlockChainInfo> findBlockChainInfo(@Path(value = "network") String  network);
 
-    @GET(value = "/api/v2/get_blockhash/BTC/{height}")
-    Call<BlockHashSoChain> findBlockHash(@Path(value = "height") Long height);
+    @GET(value = "/api/v2/get_blockhash/{network}/{height}")
+    Call<BlockHashSoChain> findBlockHash(@Path(value = "network") String  network,
+                                         @Path(value = "height") Long height);
 
 }

@@ -25,4 +25,15 @@ public enum Network {
         }
     }
 
+    public final String getApi() {
+        switch(this) {
+            case MAIN:
+                return "BTC";
+            case TEST:
+                return  "BTCTEST";
+            default:
+                return "BTC";
+        }
+    }
+
 }

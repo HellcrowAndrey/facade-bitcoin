@@ -18,16 +18,19 @@ public final class BlockSoChainService implements IBlockSoChainService {
 
     private static final Logger log = LoggerFactory.getLogger(BlockSoChainService.class);
 
+    private final String network;
+
     private final String url;
 
-    public BlockSoChainService(String url) {
+    public BlockSoChainService(String network, String url) {
+        this.network = network;
         this.url = url;
     }
 
     @Override
     public BlockChainInfo findBlockChainInfo() {
         BlockSoChainRepository service = AppConfig.getInstance().blockSoChainService(this.url);
-        Call<BlockChainInfo> call = service.findBlockChainInfo();
+        Call<BlockChainInfo> call = service.findBlockChainInfo(this.network);
         try {
             Response<BlockChainInfo> response = call.execute();
             if (response.isSuccessful()) {
@@ -42,7 +45,7 @@ public final class BlockSoChainService implements IBlockSoChainService {
     @Override
     public Optional<BlockHeightAdapter> findBlockHash(Long height) {
         BlockSoChainRepository service = AppConfig.getInstance().blockSoChainService(this.url);
-        Call<BlockHashSoChain> call = service.findBlockHash(height);
+        Call<BlockHashSoChain> call = service.findBlockHash(this.network, height);
         try {
             Response<BlockHashSoChain> response = call.execute();
             if (response.isSuccessful()) {
